@@ -30,4 +30,6 @@ jobs:
         run: echo "Deploying..."
       - name: Set result outputs
         id: set-results
-        run: echo "DEPLOYMENT_STATUS=success" >> $GITHUB_ENV
+        run: |
+          echo "DEPLOYMENT_STATUS=success" >> $GITHUB_OUTPUT
+          echo "Set deployment status output to 'success'"
