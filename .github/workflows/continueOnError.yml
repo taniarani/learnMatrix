@@ -1,10 +1,13 @@
 name: Website Deployment with continueOn error
+# Demonstrates continue-on-error at the step level: the test step can fail without failing the entire job,
+# allowing downstream jobs (build, deploy) to proceed. A final report job captures failure context.
 on:
   push:
     branches:
       - main
 jobs:
   lint:
+    # Lint: installs dependencies (only if not cached) and runs linter
     runs-on: ubuntu-latest
     steps:
       - name: Get code
@@ -21,6 +24,8 @@ jobs:
       - name: Lint code
         run: npm run lint
   test:
+    # Test: similar setup. The test step is marked continue-on-error so a failing test doesn't stop the job.
+    # Note: The job result will be 'success' even if that step fails; use step outcome for conditional logic if needed.
     runs-on: ubuntu-latest
     steps:
       - name: Get code
@@ -39,11 +44,13 @@ jobs:
         id: Test
         run: npm run test
       - name: Upload test report
+        # Uploads test report regardless of success; consumers can inspect test.json.
         uses: actions/upload-artifact@v4
         with:
           name: test-report
           path: test.json
   build:
+    # Build: depends on test job finishing (even if tests failed). Produces dist artifact for deployment.
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -67,6 +74,7 @@ jobs:
           name: dist-files
           path: dist
   deploy:
+    # Deploy: downloads dist artifact and performs placeholder deployment command.
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -79,6 +87,7 @@ jobs:
       - name: Deploy
         run: echo "Deploying..."
   report:
+    # Report: triggers only if any prior job failed (overall result), giving a quick debug context.
     if: failure()
     needs: [test, build , lint]
     runs-on: ubuntu-latest

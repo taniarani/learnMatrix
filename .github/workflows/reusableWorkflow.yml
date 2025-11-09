@@ -1,32 +1,39 @@
 name: reusable workflow
+# This reusable workflow expects to be invoked with 'workflow_call'. It downloads a build artifact, performs a dummy deploy,
+# and returns a deployment status via workflow outputs.
 on: 
   workflow_call:
     inputs:
       artifact_name:
-        description: The name of the deployable artifact files
+        description: The name of the deployable artifact files (should match the uploader's artifact name)
         required: false
         default: dist-files
         type: string
     outputs:
+      # Top-level workflow output passed back to the caller workflow.
       result:
-        description: The result of the deployment
+        description: The result of the deployment (mirrors the 'outcome' job output)
         value: ${{ jobs.deploy.outputs.outcome }}
+      # To use secrets here, uncomment and declare them; then reference via 'secrets.some-secret'
       # secrets:
       #   some-secret:
       #     required: true
 jobs:
   deploy:
+    # Single job that exposes a job-level output 'outcome' sourced from the set-results step.
     outputs:
       outcome: ${{ steps.set-results.outputs.DEPLOYMENT_STATUS }}
     runs-on: ubuntu-latest
     steps:
       - name: Get build artifacts
+        # Downloads the artifact uploaded by the caller workflow's build job.
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.artifact_name }}
       - name: Output contents
         run: ls
       - name: Deploy
+        # Placeholder deploy action. Replace with real deployment commands (e.g., rsync, scp, cloud CLI, etc.)
         run: echo "Deploying..."
       - name: Set result outputs
         id: set-results

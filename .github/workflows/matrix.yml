@@ -1,19 +1,20 @@
 name: Website deployed with Matrix
+# Demonstrates use of a matrix strategy to build across multiple OS + Node.js versions.
 on: push
 jobs:
   build:
-    continue-on-error: true
+    continue-on-error: true  # Allow one failing combination without failing the whole workflow (use judiciously)
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        node-version: [12, 14, 16]
+        os: [ubuntu-latest, windows-latest]          # Primary operating system axis
+        node-version: [12, 14, 16]                   # Primary Node versions to test/build against
         include:
           - os: ubuntu-latest
-            node-version: 18
+            node-version: 18                         # Add an extra combination not covered by base list (Ubuntu + Node 18)
         exclude:
           - os: windows-latest
-            node-version: 12
-    runs-on: ${{ matrix.os }}
+            node-version: 12                         # Skip Windows + Node 12 if it's not supported or flaky
+    runs-on: ${{ matrix.os }}                        # Each job run picks the os value from the matrix expansion
     steps:
       - name: Get code
         uses: actions/checkout@v4
@@ -21,8 +22,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'npm'                               # Speeds up installs between runs by caching ~/.npm
       - name: Install dependencies
-        run: npm ci
+        run: npm ci                                  # Clean install for deterministic builds
       - name: Build the Project
-        run: npm run build
+        run: npm run build                          # Build command (adjust if you have tests or type checks)
 
